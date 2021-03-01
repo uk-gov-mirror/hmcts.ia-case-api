@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
 import uk.gov.hmcts.reform.iacaseapi.domain.UserDetailsProvider;
@@ -50,6 +49,8 @@ public class CcdCaseAssignment {
         this.ccdAssignmentsApiPath = ccdAssignmentsApiPath;
         this.aacAssignmentsApiPath = aacAssignmentsApiPath;
         this.applyNocAssignmentsApiPath = applyNocAssignmentsApiPath;
+
+        restTemplate.setErrorHandler(new ClientResponseErrorHandler());
     }
 
     public void revokeAccessToCase(
@@ -73,25 +74,15 @@ public class CcdCaseAssignment {
                 setHeaders(serviceAuthorizationToken, accessToken)
             );
 
-        ResponseEntity<Object> response;
-        try {
-            response = restTemplate
+        log.info("Calling CCD API for the case {}", caseId);
+
+        ResponseEntity<Object> response = restTemplate
                 .exchange(
                     ccdUrl + ccdAssignmentsApiPath,
                     HttpMethod.DELETE,
                     requestEntity,
                     Object.class
                 );
-
-        } catch (RestClientResponseException e) {
-            throw new CcdDataIntegrationException(
-                "Couldn't revoke CCD case access for case ["
-                + callback.getCaseDetails().getId()
-                + "] using API: "
-                + ccdUrl + ccdAssignmentsApiPath,
-                e
-            );
-        }
 
         log.info("Revoke Access. Http status received from CCD API; {} for case {}",
             response.getStatusCodeValue(), callback.getCaseDetails().getId());
@@ -116,25 +107,15 @@ public class CcdCaseAssignment {
                 setHeaders(serviceAuthorizationToken, accessToken)
             );
 
-        ResponseEntity<Object> response;
-        try {
-            response = restTemplate
-                .exchange(
-                    aacUrl + aacAssignmentsApiPath,
-                    HttpMethod.POST,
-                    requestEntity,
-                    Object.class
-                );
+        log.info("Calling AAC API for the case {}", caseId);
 
-        } catch (RestClientResponseException e) {
-            throw new CcdDataIntegrationException(
-                "Couldn't set initial AAC case assignment for case ["
-                + callback.getCaseDetails().getId()
-                + "] using API: "
-                + aacUrl + aacAssignmentsApiPath,
-                e
+        ResponseEntity<Object> response = restTemplate
+            .exchange(
+                aacUrl + aacAssignmentsApiPath,
+                HttpMethod.POST,
+                requestEntity,
+                Object.class
             );
-        }
 
         log.info("Assign Access. Http status received from AAC API; {} for case {}",
             response.getStatusCodeValue(), callback.getCaseDetails().getId());
@@ -155,25 +136,13 @@ public class CcdCaseAssignment {
                 setHeaders(serviceAuthorizationToken, accessToken)
             );
 
-        ResponseEntity<Object> response;
-        try {
-            response = restTemplate
-                .exchange(
-                    aacUrl + applyNocAssignmentsApiPath,
-                    HttpMethod.POST,
-                    requestEntity,
-                    Object.class
-                );
-
-        } catch (RestClientResponseException e) {
-            throw new CcdDataIntegrationException(
-                "Couldn't apply noc AAC case assignment for case ["
-                + callback.getCaseDetails().getId()
-                + "] using API: "
-                + aacUrl + applyNocAssignmentsApiPath,
-                e
+        ResponseEntity<Object> response = restTemplate
+            .exchange(
+                aacUrl + applyNocAssignmentsApiPath,
+                HttpMethod.POST,
+                requestEntity,
+                Object.class
             );
-        }
 
         log.info("Apply NoC. Http status received from AAC API; {} for case {}",
             response.getStatusCodeValue(), callback.getCaseDetails().getId());

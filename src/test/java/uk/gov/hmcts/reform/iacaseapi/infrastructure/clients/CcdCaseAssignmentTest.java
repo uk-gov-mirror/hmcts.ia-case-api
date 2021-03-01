@@ -14,7 +14,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
 import uk.gov.hmcts.reform.iacaseapi.domain.UserDetailsProvider;
@@ -45,6 +44,8 @@ class CcdCaseAssignmentTest {
     @Mock private Callback<AsylumCase> callback;
     @Mock private CaseDetails<AsylumCase> caseDetails;
     @Mock private UserDetails userDetails;
+
+    @Mock private CcdDataIntegrationException ccdDataIntegrationException;
 
     @BeforeEach
     public void setUp() {
@@ -158,8 +159,6 @@ class CcdCaseAssignmentTest {
     @Test
     void should_handle_when_rest_exception_thrown_for_set_access() {
 
-        RestClientResponseException restClientResponseEx = mock(RestClientResponseException.class);
-
         when(serviceAuthTokenGenerator.generate()).thenReturn(SERVICE_TOKEN);
         when(userDetailsProvider.getUserDetails()).thenReturn(userDetails);
         when(userDetails.getAccessToken()).thenReturn(ACCESS_TOKEN);
@@ -174,16 +173,10 @@ class CcdCaseAssignmentTest {
                 any(HttpEntity.class),
                 eq(Object.class)
             )
-        ).thenThrow(restClientResponseEx);
+        ).thenThrow(ccdDataIntegrationException);
 
         assertThatThrownBy(() -> ccdCaseAssignment.assignAccessToCase(callback))
-            .isInstanceOf(CcdDataIntegrationException.class)
-            .hasMessage("Couldn't set initial AAC case assignment for case ["
-                        + caseDetails.getId()
-                        + "] using API: "
-                        + aacUrl
-                        + aacAssignmentsApiPath)
-            .hasCauseInstanceOf(RestClientResponseException.class);
+            .isInstanceOf(CcdDataIntegrationException.class);
 
         verify(restTemplate)
             .exchange(
@@ -196,8 +189,6 @@ class CcdCaseAssignmentTest {
 
     @Test
     void should_handle_when_rest_exception_thrown_for_revoke_access() {
-
-        RestClientResponseException restClientResponseEx = mock(RestClientResponseException.class);
 
         when(serviceAuthTokenGenerator.generate()).thenReturn(SERVICE_TOKEN);
         when(userDetailsProvider.getUserDetails()).thenReturn(userDetails);
@@ -213,15 +204,10 @@ class CcdCaseAssignmentTest {
                 any(HttpEntity.class),
                 eq(Object.class)
             )
-        ).thenThrow(restClientResponseEx);
+        ).thenThrow(ccdDataIntegrationException);
 
         assertThatThrownBy(() -> ccdCaseAssignment.revokeAccessToCase(callback, "some-org-identifier"))
-            .isInstanceOf(CcdDataIntegrationException.class)
-            .hasMessage("Couldn't revoke CCD case access for case ["
-                        + caseDetails.getId()
-                        + "] using API: "
-                        + ccdUrl + ccdAssignmentsApiPath)
-            .hasCauseInstanceOf(RestClientResponseException.class);
+            .isInstanceOf(CcdDataIntegrationException.class);
 
         verify(restTemplate)
             .exchange(
@@ -235,13 +221,9 @@ class CcdCaseAssignmentTest {
     @Test
     void should_handle_when_rest_exception_thrown_for_apply_noc() {
 
-        RestClientResponseException restClientResponseEx = mock(RestClientResponseException.class);
-
         when(serviceAuthTokenGenerator.generate()).thenReturn(SERVICE_TOKEN);
         when(userDetailsProvider.getUserDetails()).thenReturn(userDetails);
         when(userDetails.getAccessToken()).thenReturn(ACCESS_TOKEN);
-        when(callback.getCaseDetails()).thenReturn(caseDetails);
-        when(caseDetails.getId()).thenReturn(123L);
 
         when(restTemplate
             .exchange(
@@ -250,15 +232,10 @@ class CcdCaseAssignmentTest {
                 any(HttpEntity.class),
                 eq(Object.class)
             )
-        ).thenThrow(restClientResponseEx);
+        ).thenThrow(ccdDataIntegrationException);
 
         assertThatThrownBy(() -> ccdCaseAssignment.applyNoc(callback))
-            .isInstanceOf(CcdDataIntegrationException.class)
-            .hasMessage("Couldn't apply noc AAC case assignment for case ["
-                        + caseDetails.getId()
-                        + "] using API: "
-                        + aacUrl + nocAssignmentsApiPath)
-            .hasCauseInstanceOf(RestClientResponseException.class);
+            .isInstanceOf(CcdDataIntegrationException.class);
 
         verify(restTemplate)
             .exchange(
