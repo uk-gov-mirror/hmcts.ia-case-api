@@ -1,0 +1,31 @@
+{
+  "description": "RIA-4042 Case officer record out of time decision",
+  "request": {
+    "uri": "/asylum/ccdAboutToSubmit",
+    "credentials": "CaseOfficer",
+    "input": {
+      "eventId": "recordOutOfTimeDecision",
+      "state": "appealSubmitted",
+      "caseData": {
+        "template": "minimal-appeal-submitted.json",
+        "replacements": {
+          "recordedOutOfTimeDecision": "No",
+          "submissionOutOfTime": "Yes"
+
+        }
+      }
+    }
+  },
+  "expectation": {
+    "status": 200,
+    "errors": [],
+    "caseData": {
+      "template": "minimal-appeal-submitted.json",
+      "replacements": {
+        "outOfTimeDecisionMaker": "Tribunal Caseworker",
+        "recordedOutOfTimeDecision": "Yes",
+        "submissionOutOfTime": "Yes"
+      }
+    }
+  }
+}
