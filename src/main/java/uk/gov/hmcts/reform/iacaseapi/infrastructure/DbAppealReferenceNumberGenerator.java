@@ -47,8 +47,9 @@ public class DbAppealReferenceNumberGenerator implements AppealReferenceNumberGe
 
         try {
             tryInsertNewReferenceNumber(parameters);
-        } catch (DuplicateKeyException e) {
+        } catch (Exception e) {
             // appeal reference number already exists for this case
+            log.warn("There was an issue when the system was generating appeal reference number: {} for case {}", selectAppealReferenceNumberForCase(parameters));
         }
 
         try {
